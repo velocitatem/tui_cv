@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -15,18 +17,27 @@ var (
 			Bold(true).
 			Foreground(lipgloss.Color("#FAFAFA")).
 			Background(lipgloss.Color("#7D56F4")).
-			PaddingLeft(4).
-			PaddingRight(4).
-			MarginBottom(1)
+			PaddingLeft(2).
+			PaddingRight(2).
+			MarginBottom(1).
+			Width(0)
+
+	quoteStyle = lipgloss.NewStyle().
+			Italic(true).
+			Foreground(lipgloss.Color("#9F87FF")).
+			MarginTop(1).
+			MarginBottom(1).
+			Align(lipgloss.Center)
 
 	sectionStyle = lipgloss.NewStyle().
 			Bold(true).
 			Foreground(lipgloss.Color("#7D56F4")).
 			MarginTop(1).
-			MarginBottom(1)
+			MarginBottom(0)
 
 	itemStyle = lipgloss.NewStyle().
-			PaddingLeft(2)
+			PaddingLeft(1).
+			MarginLeft(1)
 
 	highlightStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#7D56F4")).
@@ -36,255 +47,396 @@ var (
 			Foreground(lipgloss.Color("#626262")).
 			Align(lipgloss.Center).
 			MarginTop(1)
+
+	containerStyle = lipgloss.NewStyle().
+			PaddingLeft(1).
+			PaddingRight(1)
 )
+
+type ResumeData struct {
+	Personal struct {
+		Name     string `yaml:"name"`
+		Title    string `yaml:"title"`
+		Quote    string `yaml:"quote"`
+		Summary  string `yaml:"summary"`
+		Location string `yaml:"location"`
+	} `yaml:"personal"`
+	Philosophy    []string `yaml:"philosophy"`
+	CurrentFocus  []string `yaml:"current_focus"`
+	Education     struct {
+		Degree   string `yaml:"degree"`
+		School   string `yaml:"school"`
+		Period   string `yaml:"period"`
+		Location string `yaml:"location"`
+	} `yaml:"education"`
+	Experience []struct {
+		Title        string   `yaml:"title"`
+		Organization string   `yaml:"organization"`
+		Period       string   `yaml:"period"`
+		Details      []string `yaml:"details"`
+	} `yaml:"experience"`
+	Github struct {
+		Username     string `yaml:"username"`
+		Repositories string `yaml:"repositories"`
+		Status       string `yaml:"status"`
+	} `yaml:"github"`
+	Projects []struct {
+		Name        string `yaml:"name"`
+		Description string `yaml:"description"`
+		Tech        string `yaml:"tech"`
+		Link        string `yaml:"link"`
+	} `yaml:"projects"`
+	Blog struct {
+		Name         string `yaml:"name"`
+		Description  string `yaml:"description"`
+		Tagline      string `yaml:"tagline"`
+		ContentFocus string `yaml:"content_focus"`
+	} `yaml:"blog"`
+	Skills struct {
+		Categories []struct {
+			Category    string   `yaml:"category"`
+			Description string   `yaml:"description"`
+			Skills      []string `yaml:"skills"`
+		} `yaml:"categories"`
+		Languages []string `yaml:"languages"`
+	} `yaml:"skills"`
+	Achievements struct {
+		Hackathons    []string `yaml:"hackathons"`
+		Leadership    []string `yaml:"leadership"`
+		Presentations []string `yaml:"presentations"`
+		Community     []string `yaml:"community"`
+	} `yaml:"achievements"`
+	Contact struct {
+		Websites     []string `yaml:"websites"`
+		Professional []string `yaml:"professional"`
+		Info         []string `yaml:"info"`
+		Note         string   `yaml:"note"`
+		AboutResume  struct {
+			Description string `yaml:"description"`
+			Source      string `yaml:"source"`
+		} `yaml:"about_resume"`
+	} `yaml:"contact"`
+}
 
 type model struct {
 	viewport    viewport.Model
 	ready       bool
 	currentPage int
 	pages       []string
+	resumeData  ResumeData
+}
+
+func loadResumeData() (ResumeData, error) {
+	var data ResumeData
+	yamlFile, err := ioutil.ReadFile("resume.yaml")
+	if err != nil {
+		return data, err
+	}
+	err = yaml.Unmarshal(yamlFile, &data)
+	return data, err
 }
 
 func initialModel() model {
-	return model{
+	data, err := loadResumeData()
+	if err != nil {
+		fmt.Printf("Error loading resume data: %v\n", err)
+		os.Exit(1)
+	}
+	
+	m := model{
 		viewport:    viewport.Model{},
 		currentPage: 0,
-		pages: []string{
-			buildResumePage(),
-			buildProjectsPage(),
-			buildSkillsPage(),
-			buildContactPage(),
-		},
+		resumeData:  data,
 	}
+	
+	m.pages = []string{
+		m.buildProfilePage(),
+		m.buildExperiencePage(),
+		m.buildProjectsPage(),
+		m.buildSkillsPage(),
+		m.buildAchievementsPage(),
+		m.buildContactPage(),
+	}
+	
+	return m
 }
 
-func buildResumePage() string {
+func wrapText(text string, width int) string {
+	// Ensure we have a reasonable minimum width
+	if width <= 30 {
+		width = 80 // Default to reasonable width if viewport is too small
+	}
+	
+	// Account for minimal padding only
+	effectiveWidth := width - 4 // Leave small room for padding
+	if effectiveWidth <= 30 {
+		effectiveWidth = width // Use full width if we're already tight on space
+	}
+	
+	words := strings.Fields(text)
+	if len(words) == 0 {
+		return text
+	}
+	
+	var lines []string
+	var currentLine strings.Builder
+	
+	for _, word := range words {
+		if currentLine.Len() == 0 {
+			currentLine.WriteString(word)
+		} else if currentLine.Len()+1+len(word) <= effectiveWidth {
+			currentLine.WriteString(" " + word)
+		} else {
+			lines = append(lines, currentLine.String())
+			currentLine.Reset()
+			currentLine.WriteString(word)
+		}
+	}
+	
+	if currentLine.Len() > 0 {
+		lines = append(lines, currentLine.String())
+	}
+	
+	return strings.Join(lines, "\n")
+}
+
+func (m model) buildProfilePage() string {
 	var b strings.Builder
 
-	// CUSTOMIZE THIS SECTION WITH YOUR INFO
-	name := "Daniel Alves"
-	title := "Software Engineer"
-	summary := "Passionate software engineer with expertise in systems programming, web development, and DevOps."
-
 	// Build the header
-	header := titleStyle.Render(fmt.Sprintf("%s - %s", name, title))
+	header := titleStyle.Render(m.resumeData.Personal.Name)
+	b.WriteString(header + "\n")
+
+	subtitle := m.resumeData.Personal.Title
+	b.WriteString(itemStyle.Render(subtitle) + "\n")
+
+	// Add quote
+	b.WriteString("\n" + quoteStyle.Render(m.resumeData.Personal.Quote) + "\n")
+
+	// Summary - wrap text to prevent overflow
+	wrappedSummary := wrapText(m.resumeData.Personal.Summary, m.viewport.Width)
+	b.WriteString("\n" + wrappedSummary + "\n")
+
+	// Personal Philosophy
+	b.WriteString("\n" + sectionStyle.Render("PERSONAL PHILOSOPHY") + "\n")
+	for _, philosophy := range m.resumeData.Philosophy {
+		wrappedPhilosophy := wrapText("• \""+philosophy+"\"", m.viewport.Width)
+		b.WriteString(itemStyle.Render(wrappedPhilosophy) + "\n")
+	}
+
+	// Current Focus
+	b.WriteString("\n" + sectionStyle.Render("CURRENT FOCUS") + "\n")
+	for _, focus := range m.resumeData.CurrentFocus {
+		b.WriteString(itemStyle.Render("• " + focus) + "\n")
+	}
+
+	// Location
+	b.WriteString("\n" + sectionStyle.Render("LOCATION") + "\n")
+	b.WriteString(itemStyle.Render(m.resumeData.Personal.Location) + "\n")
+
+	// Footer with navigation help
+	footer := footerStyle.Render("Press 'n' for next page, 'p' for previous, 'q' to quit")
+	b.WriteString("\n\n" + footer)
+
+	return b.String()
+}
+
+func (m model) buildExperiencePage() string {
+	var b strings.Builder
+
+	// Header
+	header := titleStyle.Render("EDUCATION & EXPERIENCE")
 	b.WriteString(header + "\n\n")
-
-	b.WriteString(summary + "\n\n")
-
-	// Experience
-	b.WriteString(sectionStyle.Render("EXPERIENCE") + "\n")
-
-	// CUSTOMIZE THESE WITH YOUR ACTUAL EXPERIENCE
-	experiences := []struct {
-		title    string
-		company  string
-		period   string
-		location string
-		details  []string
-	}{
-		{
-			title:    "Senior Software Engineer",
-			company:  "Example Corp",
-			period:   "2022 - Present",
-			location: "Remote",
-			details: []string{
-				"Led development of microservices architecture",
-				"Implemented CI/CD pipelines reducing deployment time by 70%",
-				"Mentored junior developers on best practices",
-			},
-		},
-		{
-			title:    "Software Engineer",
-			company:  "Tech Startup",
-			period:   "2019 - 2022",
-			location: "New York, NY",
-			details: []string{
-				"Developed backend services using Go and Rust",
-				"Created RESTful APIs for mobile applications",
-				"Optimized database queries improving performance by 40%",
-			},
-		},
-	}
-
-	for _, exp := range experiences {
-		job := fmt.Sprintf("%s, %s", highlightStyle.Render(exp.title), exp.company)
-		period := fmt.Sprintf("%s | %s", exp.period, exp.location)
-		b.WriteString(itemStyle.Render(job) + "\n")
-		b.WriteString(itemStyle.Render(period) + "\n")
-
-		for _, detail := range exp.details {
-			b.WriteString(itemStyle.Render("• " + detail) + "\n")
-		}
-		b.WriteString("\n")
-	}
 
 	// Education
 	b.WriteString(sectionStyle.Render("EDUCATION") + "\n")
 
-	// CUSTOMIZE THIS WITH YOUR EDUCATION
-	education := struct {
-		degree   string
-		school   string
-		period   string
-		location string
-	}{
-		degree:   "Bachelor of Science in Computer Science",
-		school:   "University of Technology",
-		period:   "2015 - 2019",
-		location: "San Francisco, CA",
-	}
-
-	edu := fmt.Sprintf("%s, %s", highlightStyle.Render(education.degree), education.school)
-	eduPeriod := fmt.Sprintf("%s | %s", education.period, education.location)
+	edu := fmt.Sprintf("%s, %s", highlightStyle.Render(m.resumeData.Education.Degree), m.resumeData.Education.School)
+	eduPeriod := fmt.Sprintf("%s | %s", m.resumeData.Education.Period, m.resumeData.Education.Location)
 	b.WriteString(itemStyle.Render(edu) + "\n")
 	b.WriteString(itemStyle.Render(eduPeriod) + "\n\n")
 
+	// Leadership Experience
+	b.WriteString(sectionStyle.Render("LEADERSHIP") + "\n")
+
+	for _, exp := range m.resumeData.Experience {
+		job := fmt.Sprintf("%s, %s", highlightStyle.Render(exp.Title), exp.Organization)
+		period := fmt.Sprintf("%s", exp.Period)
+		b.WriteString(itemStyle.Render(job) + "\n")
+		b.WriteString(itemStyle.Render(period) + "\n")
+
+		for _, detail := range exp.Details {
+			wrappedDetail := wrapText("• "+detail, m.viewport.Width)
+			b.WriteString(itemStyle.Render(wrappedDetail) + "\n")
+		}
+		b.WriteString("\n")
+	}
+
 	// Footer with navigation help
 	footer := footerStyle.Render("Press 'n' for next page, 'p' for previous, 'q' to quit")
-	b.WriteString("\n" + footer)
+	b.WriteString("\n\n" + footer)
 
 	return b.String()
 }
 
-func buildProjectsPage() string {
+func (m model) buildProjectsPage() string {
 	var b strings.Builder
 
 	// Header
-	header := titleStyle.Render("PROJECTS")
+	header := titleStyle.Render("PROJECTS & CONTRIBUTIONS")
 	b.WriteString(header + "\n\n")
 
-	// CUSTOMIZE THESE WITH YOUR ACTUAL PROJECTS
-	projects := []struct {
-		name        string
-		description string
-		tech        string
-		link        string
-	}{
-		{
-			name:        "SSH Resume TUI",
-			description: "Interactive terminal-based resume accessible via SSH",
-			tech:        "Go, Bubble Tea, SSH",
-			link:        "cv.alves.world",
-		},
-		{
-			name:        "Personal Website",
-			description: "Portfolio website showcasing projects and blog",
-			tech:        "React, Next.js, Tailwind CSS",
-			link:        "github.com/yourusername/website",
-		},
-		{
-			name:        "API Gateway",
-			description: "High-performance API gateway with custom authentication",
-			tech:        "Rust, Redis, PostgreSQL",
-			link:        "github.com/yourusername/api-gateway",
-		},
-	}
+	// GitHub Overview
+	b.WriteString(sectionStyle.Render("GITHUB PROFILE") + "\n")
+	b.WriteString(itemStyle.Render("Username: " + m.resumeData.Github.Username) + "\n")
+	b.WriteString(itemStyle.Render(m.resumeData.Github.Repositories) + "\n")
+	b.WriteString(itemStyle.Render(m.resumeData.Github.Status) + "\n\n")
 
-	for _, project := range projects {
-		proj := highlightStyle.Render(project.name)
+	// Significant Projects
+	b.WriteString(sectionStyle.Render("SIGNIFICANT PROJECTS") + "\n")
+
+	for _, project := range m.resumeData.Projects {
+		proj := highlightStyle.Render(project.Name)
 		b.WriteString(itemStyle.Render(proj) + "\n")
-		b.WriteString(itemStyle.Render("Description: " + project.description) + "\n")
-		b.WriteString(itemStyle.Render("Technologies: " + project.tech) + "\n")
-		b.WriteString(itemStyle.Render("Link: " + project.link) + "\n\n")
+		wrappedDesc := wrapText("Description: "+project.Description, m.viewport.Width)
+		b.WriteString(itemStyle.Render(wrappedDesc) + "\n")
+		wrappedTech := wrapText("Technologies: "+project.Tech, m.viewport.Width)
+		b.WriteString(itemStyle.Render(wrappedTech) + "\n")
+		b.WriteString(itemStyle.Render("Link: " + project.Link) + "\n\n")
 	}
+
+	// Blog and Research
+	b.WriteString(sectionStyle.Render("BLOG & RESEARCH") + "\n")
+	wrappedBlogName := wrapText(m.resumeData.Blog.Name+" - "+m.resumeData.Blog.Description, m.viewport.Width)
+	b.WriteString(itemStyle.Render(wrappedBlogName) + "\n")
+	wrappedTagline := wrapText(m.resumeData.Blog.Tagline, m.viewport.Width)
+	b.WriteString(itemStyle.Render(wrappedTagline) + "\n")
+	wrappedContentFocus := wrapText(m.resumeData.Blog.ContentFocus, m.viewport.Width)
+	b.WriteString(itemStyle.Render(wrappedContentFocus) + "\n\n")
 
 	// Footer with navigation help
 	footer := footerStyle.Render("Press 'n' for next page, 'p' for previous, 'q' to quit")
-	b.WriteString("\n" + footer)
+	b.WriteString("\n\n" + footer)
 
 	return b.String()
 }
 
-func buildSkillsPage() string {
+func (m model) buildSkillsPage() string {
 	var b strings.Builder
 
 	// Header
-	header := titleStyle.Render("SKILLS & EXPERTISE")
+	header := titleStyle.Render("TECHNICAL SPECIALIZATIONS")
 	b.WriteString(header + "\n\n")
 
-	// CUSTOMIZE THESE WITH YOUR ACTUAL SKILLS
-	skillCategories := []struct {
-		category string
-		skills   []string
-	}{
-		{
-			category: "Programming Languages",
-			skills:   []string{"Go", "Rust", "JavaScript/TypeScript", "Python", "C/C++"},
-		},
-		{
-			category: "Frameworks & Libraries",
-			skills:   []string{"React", "Node.js", "Express", "Django", "Actix Web"},
-		},
-		{
-			category: "Tools & Platforms",
-			skills:   []string{"Docker", "Kubernetes", "AWS", "GitHub Actions", "Terraform"},
-		},
-		{
-			category: "Databases",
-			skills:   []string{"PostgreSQL", "MongoDB", "Redis", "Elasticsearch"},
-		},
-	}
-
-	for _, category := range skillCategories {
-		cat := sectionStyle.Render(category.category)
+	// Core technical specializations
+	for _, category := range m.resumeData.Skills.Categories {
+		cat := sectionStyle.Render(category.Category)
 		b.WriteString(cat + "\n")
-		b.WriteString(itemStyle.Render(strings.Join(category.skills, ", ")) + "\n\n")
+		wrappedDesc := wrapText(category.Description, m.viewport.Width)
+		b.WriteString(itemStyle.Render(wrappedDesc) + "\n")
+		wrappedSkills := wrapText("Key skills: "+strings.Join(category.Skills, ", "), m.viewport.Width)
+		b.WriteString(itemStyle.Render(wrappedSkills) + "\n\n")
 	}
+
+	// Programming Languages
+	b.WriteString(sectionStyle.Render("PROGRAMMING LANGUAGES") + "\n")
+	wrappedLanguages := wrapText(strings.Join(m.resumeData.Skills.Languages, ", "), m.viewport.Width)
+	b.WriteString(itemStyle.Render(wrappedLanguages) + "\n\n")
 
 	// Footer with navigation help
 	footer := footerStyle.Render("Press 'n' for next page, 'p' for previous, 'q' to quit")
-	b.WriteString("\n" + footer)
+	b.WriteString("\n\n" + footer)
 
 	return b.String()
 }
 
-func buildContactPage() string {
+func (m model) buildAchievementsPage() string {
 	var b strings.Builder
 
 	// Header
-	header := titleStyle.Render("CONTACT & LINKS")
+	header := titleStyle.Render("ACHIEVEMENTS & RECOGNITION")
 	b.WriteString(header + "\n\n")
 
-	// CUSTOMIZE THESE WITH YOUR ACTUAL CONTACT INFO
-	contacts := []struct {
-		method string
-		value  string
-	}{
-		{
-			method: "Email",
-			value:  "you@example.com",
-		},
-		{
-			method: "GitHub",
-			value:  "github.com/yourusername",
-		},
-		{
-			method: "LinkedIn",
-			value:  "linkedin.com/in/yourusername",
-		},
-		{
-			method: "Website",
-			value:  "yourdomain.com",
-		},
-		{
-			method: "Twitter",
-			value:  "@yourusername",
-		},
+	// Hackathon Victories
+	b.WriteString(sectionStyle.Render("HACKATHON VICTORIES") + "\n")
+	for _, hackathon := range m.resumeData.Achievements.Hackathons {
+		wrappedHackathon := wrapText("• "+hackathon, m.viewport.Width)
+		b.WriteString(itemStyle.Render(wrappedHackathon) + "\n")
 	}
+	b.WriteString("\n")
 
-	for _, contact := range contacts {
-		method := highlightStyle.Render(contact.method)
-		b.WriteString(itemStyle.Render(fmt.Sprintf("%s: %s", method, contact.value)) + "\n")
+	// Leadership Recognition
+	b.WriteString(sectionStyle.Render("LEADERSHIP RECOGNITION") + "\n")
+	for _, leadership := range m.resumeData.Achievements.Leadership {
+		wrappedLeadership := wrapText("• "+leadership, m.viewport.Width)
+		b.WriteString(itemStyle.Render(wrappedLeadership) + "\n")
 	}
+	b.WriteString("\n")
 
-	b.WriteString("\n\n")
-	b.WriteString(itemStyle.Render("Thank you for checking out my resume!") + "\n")
-	b.WriteString(itemStyle.Render("Feel free to reach out for opportunities or collaboration.") + "\n\n")
+	// Technical Presentations
+	b.WriteString(sectionStyle.Render("TECHNICAL PRESENTATIONS") + "\n")
+	for _, presentation := range m.resumeData.Achievements.Presentations {
+		wrappedPresentation := wrapText("• "+presentation, m.viewport.Width)
+		b.WriteString(itemStyle.Render(wrappedPresentation) + "\n")
+	}
+	b.WriteString("\n")
+
+	// Community Building
+	b.WriteString(sectionStyle.Render("COMMUNITY IMPACT") + "\n")
+	for _, community := range m.resumeData.Achievements.Community {
+		wrappedCommunity := wrapText("• "+community, m.viewport.Width)
+		b.WriteString(itemStyle.Render(wrappedCommunity) + "\n")
+	}
+	b.WriteString("\n")
 
 	// Footer with navigation help
 	footer := footerStyle.Render("Press 'n' for next page, 'p' for previous, 'q' to quit")
-	b.WriteString("\n" + footer)
+	b.WriteString("\n\n" + footer)
+
+	return b.String()
+}
+
+func (m model) buildContactPage() string {
+	var b strings.Builder
+
+	// Header
+	header := titleStyle.Render("CONNECT WITH DANIEL")
+	b.WriteString(header + "\n\n")
+
+	// Websites
+	b.WriteString(sectionStyle.Render("PERSONAL WEBSITES") + "\n")
+	for _, website := range m.resumeData.Contact.Websites {
+		b.WriteString(itemStyle.Render("• " + website) + "\n")
+	}
+	b.WriteString("\n")
+
+	// Social & Professional
+	b.WriteString(sectionStyle.Render("PROFESSIONAL PROFILES") + "\n")
+	for _, professional := range m.resumeData.Contact.Professional {
+		b.WriteString(itemStyle.Render("• " + professional) + "\n")
+	}
+	b.WriteString("\n")
+
+	// Contact
+	b.WriteString(sectionStyle.Render("GET IN TOUCH") + "\n")
+	for _, info := range m.resumeData.Contact.Info {
+		b.WriteString(itemStyle.Render("• " + info) + "\n")
+	}
+	b.WriteString("\n")
+
+	// Final Note
+	b.WriteString(quoteStyle.Render(m.resumeData.Contact.Note) + "\n\n")
+
+	// This Resume
+	b.WriteString(sectionStyle.Render("ABOUT THIS RESUME") + "\n")
+	wrappedDescription := wrapText(m.resumeData.Contact.AboutResume.Description, m.viewport.Width)
+	b.WriteString(itemStyle.Render(wrappedDescription) + "\n")
+	wrappedSource := wrapText(m.resumeData.Contact.AboutResume.Source, m.viewport.Width)
+	b.WriteString(itemStyle.Render(wrappedSource) + "\n\n")
+
+	// Footer with navigation help
+	footer := footerStyle.Render("Press 'n' for next page, 'p' for previous, 'q' to quit")
+	b.WriteString("\n\n" + footer)
 
 	return b.String()
 }
@@ -345,7 +497,8 @@ func (m model) View() string {
 	}
 
 	pageIndicator := fmt.Sprintf("[Page %d/%d]", m.currentPage+1, len(m.pages))
-	return fmt.Sprintf("%s\n%s", m.viewport.View(), pageIndicator)
+	content := containerStyle.Render(m.viewport.View())
+	return fmt.Sprintf("%s\n%s", content, pageIndicator)
 }
 
 func main() {

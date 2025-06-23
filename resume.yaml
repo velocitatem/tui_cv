@@ -1,0 +1,144 @@
+personal:
+  name: "Daniel Alves Rosel"
+  title: "Emerging European Tech Leader"
+  quote: "\"Any sufficiently advanced technology is indistinguishable from magic\" - Arthur C. Clarke"
+  summary: "Software Engineer and ML/AI Researcher focused on high-performance systems, open-source tools, and applied artificial intelligence. Currently pursuing advanced studies in Computer Science and Artificial Intelligence at IE University. A proven community builder and technical leader with the goal of becoming Europe's leading tech problem-solver."
+  location: "Based between Madrid and Prague"
+  
+philosophy:
+  - "The true value of AI isn't in the tasks it performs but in how it empowers us to think bigger and work smarter"
+  - "Technology is more than a tool to me; it's a gateway to shaping a smarter, more connected future"
+  - "I thrive on tackling big challenges and turning ambitious ideas into real-world solutions"
+
+current_focus:
+  - "Applied Artificial Intelligence"
+  - "High-Performance System Development"
+  - "AI Security and Ethics"
+  - "Open Source Development"
+
+education:
+  degree: "Computer Science and Artificial Intelligence"
+  school: "IE University, School of Science and Technology"
+  period: "Current"
+  location: "Madrid, Spain"
+
+experience:
+  - title: "Leader"
+    organization: "IE Robotics & AI Club"
+    period: "Current"
+    details:
+      - "Grew organization to over 200 members"
+      - "Oversaw development of 15+ innovative projects"
+      - "Received \"Best New Club 2023\" award"
+      - "Organized workshops and weekly research paper discussions"
+  
+  - title: "System Administrator"
+    organization: "IE University Robotics Lab"
+    period: "Current"
+    details:
+      - "Established critical network infrastructure"
+      - "Maintained technical systems for research projects"
+  
+  - title: "Fractional CTO Consultant"
+    organization: "Various Organizations"
+    period: "Current"
+    details:
+      - "Provided technical leadership and strategic guidance"
+      - "Applied expertise in AI development and system architecture"
+
+github:
+  username: "velocitatem"
+  repositories: "171+ repositories across multiple programming languages"
+  status: "GitHub Pro member and Developer Program participant"
+
+projects:
+  - name: "Garlic"
+    description: "Innovative anti-scraping protection system addressing concerns about AI training data collection"
+    tech: "Web Technologies, Security"
+    link: "github.com/velocitatem/garlic"
+  
+  - name: "Suppress.js"
+    description: "\"AI as Backend\" framework that simplifies backend development by integrating AI capabilities"
+    tech: "JavaScript, AI, API Development"
+    link: "github.com/velocitatem/suppress-js"
+  
+  - name: "Raccoon"
+    description: "AI security tool providing prompt stress-testing to prevent cross-site scripting attacks in AI applications"
+    tech: "Security, AI, Testing"
+    link: "github.com/velocitatem/raccoon"
+  
+  - name: "GRAP"
+    description: "GRAP Representation and Processing - a proof-of-concept programming language allowing graph-like structures"
+    tech: "Programming Languages, Graph Theory"
+    link: "github.com/velocitatem/grap"
+  
+  - name: "Lectorg"
+    description: "Emacs automation package for developer productivity, presented at EmacsConf"
+    tech: "Emacs Lisp, Developer Tools"
+    link: "github.com/velocitatem/lectorg"
+
+blog:
+  name: "\"To Boldly Code\""
+  description: "Technical blog and laboratory space"
+  tagline: "Documents \"the craft of building, debugging, and exploring real-world software\""
+  content_focus: "Regular technical articles on AI, systems programming, and developer productivity"
+
+skills:
+  categories:
+    - category: "Systems Programming"
+      description: "Low-level performance optimization, memory management, and concurrency"
+      skills: ["C/C++", "Rust", "Go", "Memory Management", "Concurrency Patterns", "Performance Optimization"]
+    
+    - category: "Machine Learning & AI"
+      description: "Applied ML, LLMs, experimentation, and deployment"
+      skills: ["PyTorch", "TensorFlow", "LLM Fine-tuning", "Computer Vision", "NLP", "AI Security", "Prompt Engineering"]
+    
+    - category: "Open Source & Tooling"
+      description: "CLI tools, developer productivity, and Emacs packages"
+      skills: ["Git", "Emacs", "Shell Scripting", "CLI Development", "Package Management", "Documentation"]
+    
+    - category: "Cloud & DevOps"
+      description: "Docker containerization, CI/CD pipelines, infrastructure automation, and system design"
+      skills: ["Docker", "Kubernetes", "CI/CD", "Infrastructure as Code", "Cloud Platforms", "System Design", "Microservices"]
+
+  languages: ["JavaScript", "Python", "C++", "Rust", "Go", "Emacs Lisp", "SQL", "TypeScript", "Shell"]
+
+achievements:
+  hackathons:
+    - "NTT Data x IE Hackathon - Energy Time Series Predictive Modeling"
+    - "IE University and ClibrAIn \"AI and y Español\" Hackathon - Led \"Neural Nomads\" team with advanced AI SaaS solution"
+  
+  leadership:
+    - "IE Robotics & AI Club - \"Best New Club 2023\" award"
+    - "Featured in IE University's official press release on OpenAI collaboration"
+    - "Invited speaker at industry panels on \"Responsibility in Generative AI\""
+  
+  presentations:
+    - "EmacsConf presenter - \"Lectorg\" automation package"
+    - "Organizer of weekly research paper discussions at IE University"
+  
+  community:
+    - "Grew IE Robotics & AI Club to 200+ members"
+    - "Mentored 10+ student projects"
+    - "Created educational resources for the developer community"
+
+contact:
+  websites:
+    - "alves.world"
+    - "roselabs.eu"
+    - "rösel.eu"
+    - "\"To Boldly Code\" Blog - check websites for URL"
+  
+  professional:
+    - "GitHub: github.com/velocitatem"
+    - "LinkedIn: linkedin.com/in/daniel-alves-rosel"
+  
+  info:
+    - "Email: available on my websites"
+    - "Location: Madrid / Prague"
+  
+  note: "\"I'm always interested in connecting and exploring how we can build together.\""
+  
+  about_resume:
+    description: "This interactive TUI resume showcases both my technical skills and professional background."
+    source: "The source code is available on my GitHub."
