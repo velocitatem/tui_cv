@@ -129,27 +129,27 @@ type model struct {
 
 func loadResumeData() (ResumeData, error) {
 	var data ResumeData
-	
+
 	// Get the directory where the executable is located
 	execPath, err := os.Executable()
 	if err != nil {
 		return data, fmt.Errorf("failed to get executable path: %v", err)
 	}
 	execDir := filepath.Dir(execPath)
-	
+
 	// Construct the path to resume.yaml relative to the executable
 	yamlPath := filepath.Join(execDir, "resume.yaml")
-	
+
 	yamlFile, err := ioutil.ReadFile(yamlPath)
 	if err != nil {
 		return data, fmt.Errorf("failed to read resume.yaml from %s: %v", yamlPath, err)
 	}
-	
+
 	err = yaml.Unmarshal(yamlFile, &data)
 	if err != nil {
 		return data, fmt.Errorf("failed to parse YAML: %v", err)
 	}
-	
+
 	return data, nil
 }
 
@@ -176,6 +176,234 @@ func initialModel() model {
 	}
 
 	return m
+}
+
+// ASCII art font mapping for creating large text
+var asciiFont = map[rune][]string{
+	'A': {
+		" █████ ",
+		"██   ██",
+		"███████",
+		"██   ██",
+		"██   ██",
+	},
+	'B': {
+		"██████ ",
+		"██   ██",
+		"██████ ",
+		"██   ██",
+		"██████ ",
+	},
+	'C': {
+		" ██████",
+		"██     ",
+		"██     ",
+		"██     ",
+		" ██████",
+	},
+	'D': {
+		"██████ ",
+		"██   ██",
+		"██   ██",
+		"██   ██",
+		"██████ ",
+	},
+	'E': {
+		"███████",
+		"██     ",
+		"█████  ",
+		"██     ",
+		"███████",
+	},
+	'F': {
+		"███████",
+		"██     ",
+		"█████  ",
+		"██     ",
+		"██     ",
+	},
+	'G': {
+		" ██████",
+		"██     ",
+		"██  ███",
+		"██   ██",
+		" ██████",
+	},
+	'H': {
+		"██   ██",
+		"██   ██",
+		"███████",
+		"██   ██",
+		"██   ██",
+	},
+	'I': {
+		"███████",
+		"   ██  ",
+		"   ██  ",
+		"   ██  ",
+		"███████",
+	},
+	'J': {
+		"     ██",
+		"     ██",
+		"     ██",
+		"██   ██",
+		" ██████",
+	},
+	'K': {
+		"██   ██",
+		"██  ██ ",
+		"█████  ",
+		"██  ██ ",
+		"██   ██",
+	},
+	'L': {
+		"██     ",
+		"██     ",
+		"██     ",
+		"██     ",
+		"███████",
+	},
+	'M': {
+		"███ ███",
+		"██████ ",
+		"██ █ ██",
+		"██   ██",
+		"██   ██",
+	},
+	'N': {
+		"██   ██",
+		"███  ██",
+		"███████",
+		"██  ███",
+		"██   ██",
+	},
+	'O': {
+		" ██████",
+		"██   ██",
+		"██   ██",
+		"██   ██",
+		" ██████",
+	},
+	'P': {
+		"██████ ",
+		"██   ██",
+		"██████ ",
+		"██     ",
+		"██     ",
+	},
+	'Q': {
+		" ██████",
+		"██   ██",
+		"██ █ ██",
+		"██  ███",
+		" ███ ██",
+	},
+	'R': {
+		"██████ ",
+		"██   ██",
+		"██████ ",
+		"██   ██",
+		"██   ██",
+	},
+	'S': {
+		" ██████",
+		"██     ",
+		" ██████",
+		"     ██",
+		"██████ ",
+	},
+	'T': {
+		"███████",
+		"   ██  ",
+		"   ██  ",
+		"   ██  ",
+		"   ██  ",
+	},
+	'U': {
+		"██   ██",
+		"██   ██",
+		"██   ██",
+		"██   ██",
+		" ██████",
+	},
+	'V': {
+		"██   ██",
+		"██   ██",
+		"██   ██",
+		" █████ ",
+		"  ███  ",
+	},
+	'W': {
+		"██   ██",
+		"██   ██",
+		"██ █ ██",
+		"███████",
+		"███ ███",
+	},
+	'X': {
+		"██   ██",
+		" ██ ██ ",
+		"  ███  ",
+		" ██ ██ ",
+		"██   ██",
+	},
+	'Y': {
+		"██   ██",
+		"██   ██",
+		" ██ ██ ",
+		"  ███  ",
+		"  ███  ",
+	},
+	'Z': {
+		"███████",
+		"    ██ ",
+		"   ██  ",
+		"  ██   ",
+		"███████",
+	},
+	' ': {
+		"       ",
+		"       ",
+		"       ",
+		"       ",
+		"       ",
+	},
+}
+
+func generateASCIIArt(text string) string {
+	if len(text) == 0 {
+		return ""
+	}
+
+	text = strings.ToUpper(text)
+	runes := []rune(text)
+
+	// Initialize lines for the ASCII art
+	lines := make([]string, 5)
+
+	// Build each line of the ASCII art
+	for i, r := range runes {
+		if chars, exists := asciiFont[r]; exists {
+			for lineIdx := 0; lineIdx < 5; lineIdx++ {
+				lines[lineIdx] += chars[lineIdx]
+				// Add spacing between letters (but not after the last character)
+				if i < len(runes)-1 && r != ' ' {
+					lines[lineIdx] += "  " // Two spaces between letters
+				}
+			}
+		} else {
+			// Use space for unknown characters
+			for lineIdx := 0; lineIdx < 5; lineIdx++ {
+				lines[lineIdx] += "       "
+				if i < len(runes)-1 {
+					lines[lineIdx] += "  "
+				}
+			}
+		}
+	}
+
+	return strings.Join(lines, "\n")
 }
 
 func wrapText(text string, width int) string {
@@ -220,12 +448,23 @@ func wrapText(text string, width int) string {
 func (m model) buildProfilePage() string {
 	var b strings.Builder
 
-	// Build the header
-	header := titleStyle.Render(m.resumeData.Personal.Name)
-	b.WriteString(header + "\n")
+	// Build the ASCII art header
+	asciiName := generateASCIIArt(m.resumeData.Personal.Name)
+	// Apply purple color to the ASCII art
+	styledASCII := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#7D56F4")).
+		Bold(true).
+		Align(lipgloss.Center).
+		Render(asciiName)
+	b.WriteString(styledASCII + "\n")
 
-	subtitle := m.resumeData.Personal.Title
-	b.WriteString(itemStyle.Render(subtitle) + "\n")
+	// Subtitle with better styling
+	subtitle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#9F87FF")).
+		Italic(true).
+		Align(lipgloss.Center).
+		Render(m.resumeData.Personal.Title)
+	b.WriteString(subtitle + "\n")
 
 	// Add quote
 	b.WriteString("\n" + quoteStyle.Render(m.resumeData.Personal.Quote) + "\n")
