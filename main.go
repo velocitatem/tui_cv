@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/viewport"
@@ -128,12 +129,28 @@ type model struct {
 
 func loadResumeData() (ResumeData, error) {
 	var data ResumeData
-	yamlFile, err := ioutil.ReadFile("resume.yaml")
+	
+	// Get the directory where the executable is located
+	execPath, err := os.Executable()
 	if err != nil {
-		return data, err
+		return data, fmt.Errorf("failed to get executable path: %v", err)
 	}
+	execDir := filepath.Dir(execPath)
+	
+	// Construct the path to resume.yaml relative to the executable
+	yamlPath := filepath.Join(execDir, "resume.yaml")
+	
+	yamlFile, err := ioutil.ReadFile(yamlPath)
+	if err != nil {
+		return data, fmt.Errorf("failed to read resume.yaml from %s: %v", yamlPath, err)
+	}
+	
 	err = yaml.Unmarshal(yamlFile, &data)
-	return data, err
+	if err != nil {
+		return data, fmt.Errorf("failed to parse YAML: %v", err)
+	}
+	
+	return data, nil
 }
 
 func initialModel() model {
@@ -142,13 +159,13 @@ func initialModel() model {
 		fmt.Printf("Error loading resume data: %v\n", err)
 		os.Exit(1)
 	}
-	
+
 	m := model{
 		viewport:    viewport.Model{},
 		currentPage: 0,
 		resumeData:  data,
 	}
-	
+
 	m.pages = []string{
 		m.buildProfilePage(),
 		m.buildExperiencePage(),
@@ -157,7 +174,7 @@ func initialModel() model {
 		m.buildAchievementsPage(),
 		m.buildContactPage(),
 	}
-	
+
 	return m
 }
 
@@ -166,21 +183,21 @@ func wrapText(text string, width int) string {
 	if width <= 30 {
 		width = 80 // Default to reasonable width if viewport is too small
 	}
-	
+
 	// Account for minimal padding only
 	effectiveWidth := width - 4 // Leave small room for padding
 	if effectiveWidth <= 30 {
 		effectiveWidth = width // Use full width if we're already tight on space
 	}
-	
+
 	words := strings.Fields(text)
 	if len(words) == 0 {
 		return text
 	}
-	
+
 	var lines []string
 	var currentLine strings.Builder
-	
+
 	for _, word := range words {
 		if currentLine.Len() == 0 {
 			currentLine.WriteString(word)
@@ -192,11 +209,11 @@ func wrapText(text string, width int) string {
 			currentLine.WriteString(word)
 		}
 	}
-	
+
 	if currentLine.Len() > 0 {
 		lines = append(lines, currentLine.String())
 	}
-	
+
 	return strings.Join(lines, "\n")
 }
 
