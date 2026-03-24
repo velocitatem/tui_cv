@@ -62,9 +62,9 @@ type ResumeData struct {
 		Summary  string `yaml:"summary"`
 		Location string `yaml:"location"`
 	} `yaml:"personal"`
-	Philosophy    []string `yaml:"philosophy"`
-	CurrentFocus  []string `yaml:"current_focus"`
-	Education     struct {
+	Philosophy   []string `yaml:"philosophy"`
+	CurrentFocus []string `yaml:"current_focus"`
+	Education    struct {
 		Degree   string `yaml:"degree"`
 		School   string `yaml:"school"`
 		Period   string `yaml:"period"`
@@ -483,7 +483,7 @@ func (m model) buildProfilePage() string {
 	// Current Focus
 	b.WriteString("\n" + sectionStyle.Render("CURRENT FOCUS") + "\n")
 	for _, focus := range m.resumeData.CurrentFocus {
-		b.WriteString(itemStyle.Render("• " + focus) + "\n")
+		b.WriteString(itemStyle.Render("• "+focus) + "\n")
 	}
 
 	// Location
@@ -544,7 +544,7 @@ func (m model) buildProjectsPage() string {
 
 	// GitHub Overview
 	b.WriteString(sectionStyle.Render("GITHUB PROFILE") + "\n")
-	b.WriteString(itemStyle.Render("Username: " + m.resumeData.Github.Username) + "\n")
+	b.WriteString(itemStyle.Render("Username: "+m.resumeData.Github.Username) + "\n")
 	b.WriteString(itemStyle.Render(m.resumeData.Github.Repositories) + "\n")
 	b.WriteString(itemStyle.Render(m.resumeData.Github.Status) + "\n\n")
 
@@ -558,7 +558,7 @@ func (m model) buildProjectsPage() string {
 		b.WriteString(itemStyle.Render(wrappedDesc) + "\n")
 		wrappedTech := wrapText("Technologies: "+project.Tech, m.viewport.Width)
 		b.WriteString(itemStyle.Render(wrappedTech) + "\n")
-		b.WriteString(itemStyle.Render("Link: " + project.Link) + "\n\n")
+		b.WriteString(itemStyle.Render("Link: "+project.Link) + "\n\n")
 	}
 
 	// Blog and Research
@@ -662,21 +662,21 @@ func (m model) buildContactPage() string {
 	// Websites
 	b.WriteString(sectionStyle.Render("PERSONAL WEBSITES") + "\n")
 	for _, website := range m.resumeData.Contact.Websites {
-		b.WriteString(itemStyle.Render("• " + website) + "\n")
+		b.WriteString(itemStyle.Render("• "+website) + "\n")
 	}
 	b.WriteString("\n")
 
 	// Social & Professional
 	b.WriteString(sectionStyle.Render("PROFESSIONAL PROFILES") + "\n")
 	for _, professional := range m.resumeData.Contact.Professional {
-		b.WriteString(itemStyle.Render("• " + professional) + "\n")
+		b.WriteString(itemStyle.Render("• "+professional) + "\n")
 	}
 	b.WriteString("\n")
 
 	// Contact
 	b.WriteString(sectionStyle.Render("GET IN TOUCH") + "\n")
 	for _, info := range m.resumeData.Contact.Info {
-		b.WriteString(itemStyle.Render("• " + info) + "\n")
+		b.WriteString(itemStyle.Render("• "+info) + "\n")
 	}
 	b.WriteString("\n")
 
@@ -757,15 +757,28 @@ func (m model) View() string {
 	return fmt.Sprintf("%s\n%s", content, pageIndicator)
 }
 
-func main() {
+func runLocalTUI() error {
 	p := tea.NewProgram(
 		initialModel(),
 		tea.WithAltScreen(),
 		tea.WithMouseCellMotion(),
 	)
 
-	if _, err := p.Run(); err != nil {
-		fmt.Printf("Error running program: %v", err)
+	_, err := p.Run()
+	return err
+}
+
+func main() {
+	if len(os.Args) > 1 && os.Args[1] == "serve" {
+		if err := runSSHServer(); err != nil {
+			fmt.Printf("Error running SSH server: %v\n", err)
+			os.Exit(1)
+		}
+		return
+	}
+
+	if err := runLocalTUI(); err != nil {
+		fmt.Printf("Error running program: %v\n", err)
 		os.Exit(1)
 	}
 }

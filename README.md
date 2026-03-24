@@ -15,7 +15,7 @@ A beautiful, interactive terminal-based resume application built with Go and Bub
 
 ### Prerequisites
 
-- Go 1.19 or later
+- Go 1.25.0 or later
 - Terminal with color support
 
 ### Installation
@@ -114,41 +114,35 @@ experience:
 
 ## SSH Integration
 
-For a unique touch, you can set up the TUI to run automatically when users SSH to your server:
+The app now includes its own SSH server, so visitors can connect directly without a special username or SSH client config.
 
-### Setup SSH Resume Server
+### Run as SSH Server
 
-1. **Create dedicated user**
+1. **Build the binary**
    ```bash
-   sudo useradd -m cv
-   sudo passwd -d cv  # No password required
+   go build -o resume-tui .
    ```
 
-2. **Install the application**
+2. **Start SSH mode**
    ```bash
-   sudo cp resume-tui /home/cv/
-   sudo cp resume.yaml /home/cv/
-   sudo chown cv:cv /home/cv/resume-tui /home/cv/resume.yaml
-   sudo chmod +x /home/cv/resume-tui
+   ./resume-tui serve
    ```
 
-3. **Configure SSH**
-   Add to `/etc/ssh/sshd_config`:
-   ```
-   Match User cv
-       ForceCommand /home/cv/resume-tui
-       PasswordAuthentication yes
-       PermitEmptyPasswords yes
-   ```
-
-4. **Restart SSH service**
+   By default it listens on `:22`. You can override it with:
    ```bash
-   sudo systemctl restart sshd
+   TUI_CV_LISTEN_ADDR=:2322 ./resume-tui serve
    ```
 
-Now users can view your resume with:
+3. **Connect from any machine**
+   ```bash
+   ssh your-domain.com
+   ```
+
+No `cv@` prefix is required. Any SSH username is accepted and routed to the resume TUI.
+
+You can also force a stable host key path:
 ```bash
-ssh cv@your-domain.com
+TUI_CV_HOST_KEY=/path/to/ssh_host_ed25519_key ./resume-tui serve
 ```
 
 ## Development
@@ -157,7 +151,8 @@ ssh cv@your-domain.com
 
 ```
 TUICV/
-├── main.go           # Main application code
+├── main.go           # Bubble Tea TUI application
+├── server.go         # Embedded SSH server entrypoint
 ├── resume.yaml       # Resume content configuration
 ├── go.mod           # Go module definition
 ├── go.sum           # Go module checksums
@@ -169,6 +164,7 @@ TUICV/
 - **Bubble Tea** - TUI framework for terminal applications
 - **Lipgloss** - Styling and layout for terminal interfaces
 - **Bubbles** - Common UI components (viewport)
+- **Gliderlabs SSH** - Embedded SSH server
 - **YAML v2** - YAML parsing for configuration
 
 ### Building
