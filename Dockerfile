@@ -12,12 +12,15 @@ FROM alpine:latest
 RUN apk add --no-cache openssh git bash && \
     ssh-keygen -A && \
     adduser -D -s /bin/bash cv && \
+    passwd -d cv && \
     mkdir -p /home/cv/.ssh && \
     chown -R cv:cv /home/cv
 # SSH config for cv user
-RUN echo 'PermitEmptyPasswords yes' >> /etc/ssh/sshd_config && \
-    echo 'PasswordAuthentication yes' >> /etc/ssh/sshd_config && \
+RUN echo 'PermitRootLogin no' >> /etc/ssh/sshd_config && \
+    echo 'AllowUsers cv' >> /etc/ssh/sshd_config && \
     echo 'Match User cv' >> /etc/ssh/sshd_config && \
+    echo '    PasswordAuthentication yes' >> /etc/ssh/sshd_config && \
+    echo '    PermitEmptyPasswords yes' >> /etc/ssh/sshd_config && \
     echo '    ForceCommand /home/cv/resume-tui' >> /etc/ssh/sshd_config
 COPY --from=builder /app/resume-tui /home/cv/resume-tui
 COPY resume.yaml /home/cv/resume.yaml
